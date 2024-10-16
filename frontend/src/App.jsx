@@ -70,9 +70,9 @@ function App() {
         <Route path="/login" element={<Login setData={setData} />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<Error />} />
-        <Route path="/booking" element={<UserBooking />} />
-        <Route path="/driverbooking" element={<DriverBooking  />} />
-        <Route path="/admindashboard" element={<AdminDashboard  />} />
+        <Route path="/userDashboard" element={<UserBooking />} />
+        <Route path="/driverDashboard" element={<DriverBooking />} />
+        <Route path="/adminDashboard" element={<AdminDashboard />}/>
       </Route>
     )
   );

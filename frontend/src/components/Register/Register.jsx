@@ -1,29 +1,52 @@
-import { useState } from "react";
-import { ArrowRight } from "lucide-react";
-import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { useReducer } from "react";
 import { toast } from "react-toastify";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
-export function Register() {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [avatar, setAvatar] = useState("");
-  const [avatarPreview, setAvatarPreview] = useState("");
-  const [role, setRole] = useState("user");
-  const [number, setNumber] = useState("");
+// Initial state for the form
+const initialState = {
+  fullName: "",
+  email: "",
+  password: "",
+  number: "",
+  role: "user",
+  vehicleDetails: {
+    numberPlate: "",
+    licenceNumber: "",
+    vehicleType: "scooter",
+  },
+};
+
+// Reducer function
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value };
+    case "SET_VEHICLE_DETAIL":
+      return {
+        ...state,
+        vehicleDetails: {
+          ...state.vehicleDetails,
+          [action.field]: action.value,
+        },
+      };
+    case "RESET_FORM":
+      return initialState;
+    default:
+      return state;
+  }
+};
+
+export const Register = () => {
+  const [state, dispatch] = useReducer(reducer, initialState);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      fullName === "" ||
-      email === "" ||
-      password === "" ||
-      number === "" ||
-      avatar === ""
-    ) {
+    const { fullName, email, password, number, vehicleDetails, role } = state;
+
+    if (fullName === "" || email === "" || password === "" || number === "") {
       toast.error("All fields are required");
       return;
     }
@@ -40,44 +63,35 @@ export function Register() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("fullName", fullName);
-    formData.append("email", email);
-    formData.append("password", password);
-    formData.append("number", number);
-    formData.append("avatar", avatar);
-    formData.append("role", role);
+    const userData = {
+      fullName,
+      email,
+      password,
+      number,
+      role,
+      vehicleDetails: role === "driver" ? vehicleDetails : undefined,
+    };
 
-    axios
-      .post("http://localhost:8000/api/v1/users/register", formData, {
+    try {
+      const apiUrl =
+        role === "driver"
+          ? "http://localhost:8000/api/v1/drivers/register"
+          : "http://localhost:8000/api/v1/users/register";
+
+      const response = await axios.post(apiUrl, userData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
-      })
-      .then((response) => {
-        console.log(response.data);
-        toast.success("Form submitted successfully");
-        setFullName("");
-        setEmail("");
-        setPassword("");
-        setAvatar("");
-        setAvatarPreview("");
-        setNumber("");
-        navigate("/login");
-      })
-      .catch((error) => {
-        console.log(error);
       });
-  };
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAvatar(file);
-      setAvatarPreview(URL.createObjectURL(file));
-    } else {
-      setAvatar("");
-      setAvatarPreview("");
+      console.log(response.data);
+      toast.success("Form submitted successfully");
+      dispatch({ type: "RESET_FORM" });
+      navigate("/login");
+      navigate(0);
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while submitting the form");
     }
   };
 
@@ -105,18 +119,23 @@ export function Register() {
                     htmlFor="name"
                     className="text-base font-medium text-gray-900"
                   >
-                    {" "}
-                    Full Name{" "}
+                    Full Name
                   </label>
                   <div className="mt-2">
                     <input
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1"
                       type="text"
                       placeholder="Full Name"
                       id="name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    ></input>
+                      value={state.fullName}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "SET_FIELD",
+                          field: "fullName",
+                          value: e.target.value,
+                        })
+                      }
+                    />
                   </div>
                 </div>
                 <div>
@@ -124,18 +143,23 @@ export function Register() {
                     htmlFor="email"
                     className="text-base font-medium text-gray-900"
                   >
-                    {" "}
-                    Email address{" "}
+                    Email address
                   </label>
                   <div className="mt-2">
                     <input
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1"
                       type="email"
                       placeholder="Email"
                       id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    ></input>
+                      value={state.email}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "SET_FIELD",
+                          field: "email",
+                          value: e.target.value,
+                        })
+                      }
+                    />
                   </div>
                 </div>
                 <div>
@@ -143,18 +167,23 @@ export function Register() {
                     htmlFor="phone-number"
                     className="text-base font-medium text-gray-900"
                   >
-                    {" "}
-                    Phone Number{" "}
+                    Phone Number
                   </label>
                   <div className="mt-2">
                     <input
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1"
                       type="tel"
                       placeholder="Phone Number"
                       id="phone-number"
-                      value={number}
-                      onChange={(e) => setNumber(e.target.value)}
-                    ></input>
+                      value={state.number}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "SET_FIELD",
+                          field: "number",
+                          value: e.target.value,
+                        })
+                      }
+                    />
                   </div>
                 </div>
                 <div>
@@ -163,104 +192,155 @@ export function Register() {
                       htmlFor="password"
                       className="text-base font-medium text-gray-900"
                     >
-                      {" "}
-                      Password{" "}
+                      Password
                     </label>
                   </div>
                   <div className="mt-2">
                     <input
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1"
                       type="password"
                       placeholder="Password"
                       id="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    ></input>
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="avatar"
-                    className="text-base font-medium text-gray-900"
-                  >
-                    {" "}
-                    Upload Avatar{" "}
-                  </label>
-                  <div className="mt-2 flex items-center">
-                    <input
-                      className="hidden"
-                      type="file"
-                      id="avatar"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
+                      value={state.password}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "SET_FIELD",
+                          field: "password",
+                          value: e.target.value,
+                        })
+                      }
                     />
-                    <label
-                      htmlFor="avatar"
-                      className="cursor-pointer inline-flex items-center justify-center rounded-md bg-gray-200 px-3.5 py-2.5 font-semibold leading-7 text-gray-900 hover:bg-gray-300"
-                    >
-                      Choose File
-                    </label>
-                    {avatarPreview && (
-                      <img
-                        src={avatarPreview}
-                        alt="Avatar Preview"
-                        className="ml-4 h-16 w-16 rounded-full object-cover"
-                      />
-                    )}
                   </div>
                 </div>
                 <div>
-                  <label>Select your Role: </label>
+                  <label>Select your Role:</label>
                   <select
                     name="role"
                     id="role"
-                    value={role}
+                    value={state.role}
                     onChange={(e) => {
-                      setRole(e.target.value);
+                      dispatch({
+                        type: "SET_FIELD",
+                        field: "role",
+                        value: e.target.value,
+                      });
+                      // Reset vehicle details when role changes
+                      if (e.target.value !== "driver") {
+                        dispatch({
+                          type: "SET_VEHICLE_DETAIL",
+                          field: "numberPlate",
+                          value: "",
+                        });
+                        dispatch({
+                          type: "SET_VEHICLE_DETAIL",
+                          field: "licenceNumber",
+                          value: "",
+                        });
+                        dispatch({
+                          type: "SET_VEHICLE_DETAIL",
+                          field: "vehicleType",
+                          value: "scooter",
+                        });
+                      }
                     }}
                   >
                     <option value="user">User</option>
                     <option value="driver">Driver</option>
                   </select>
                 </div>
-                <div>
-                  <button
-                    type="submit"
-                    className="inline-flex w-full items-center justify-center rounded-md bg-black px-3.5 py-2.5 font-semibold leading-7 text-white hover:bg-black/80"
-                  >
-                    Create Account <ArrowRight className="ml-2" size={16} />
-                  </button>
-                </div>
+
+                {state.role === "driver" && (
+                  <div className="mt-5 space-y-5">
+                    <div>
+                      <label
+                        htmlFor="numberPlate"
+                        className="text-base font-medium text-gray-900"
+                      >
+                        Vehicle Number Plate
+                      </label>
+                      <input
+                        className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1"
+                        type="text"
+                        id="numberPlate"
+                        placeholder="Enter Number Plate"
+                        value={state.vehicleDetails.numberPlate}
+                        onChange={(e) =>
+                          dispatch({
+                            type: "SET_VEHICLE_DETAIL",
+                            field: "numberPlate",
+                            value: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="licenceNumber"
+                        className="text-base font-medium text-gray-900"
+                      >
+                        Licence Number
+                      </label>
+                      <input
+                        className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1"
+                        type="text"
+                        id="licenceNumber"
+                        placeholder="Enter Licence Number"
+                        value={state.vehicleDetails.licenceNumber}
+                        onChange={(e) =>
+                          dispatch({
+                            type: "SET_VEHICLE_DETAIL",
+                            field: "licenceNumber",
+                            value: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    
+                    <div>
+                      <label
+                        htmlFor="vehicleType"
+                        className="text-base font-medium text-gray-900"
+                      >
+                        Vehicle Type
+                      </label>
+                      <select
+                        id="vehicleType"
+                        className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1"
+                        value={state.vehicleDetails.vehicleType}
+                        onChange={(e) =>
+                          dispatch({
+                            type: "SET_VEHICLE_DETAIL",
+                            field: "vehicleType",
+                            value: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="scooter">Scooter</option>
+                        <option value="car">Car</option>
+                        <option value="truck">Truck</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="inline-flex w-full justify-center rounded-md border border-transparent bg-black px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                >
+                  Sign Up
+                </button>
               </div>
             </form>
-            <div className="mt-3 space-y-3">
-              <button
-                type="button"
-                className="relative inline-flex w-full items-center justify-center rounded-md border border-gray-400 bg-white px-3.5 py-2.5 font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black focus:outline-none"
-              >
-                <span className="mr-2 inline-block">
-                  <svg
-                    className="h-6 w-6 text-rose-500"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.907 8.907 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z"></path>
-                  </svg>
-                </span>
-                Sign up with Google
-              </button>
-            </div>
           </div>
         </div>
         <div className="h-full w-full">
           <img
             className="mx-auto h-full w-full rounded-md object-cover"
-            src="https://images.unsplash.com/photo-1559526324-4b87b5e36e44?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1742&q=80"
-            alt=""
+            src="https://plus.unsplash.com/premium_photo-1678283974882-a00a67c542a9?q=80&w=1780&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            alt="Signup"
           />
         </div>
       </div>
     </section>
   );
-}
+};
