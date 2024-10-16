@@ -2,11 +2,16 @@ import { Booking } from '../models/booking.model.js';
 import { Driver } from '../models/driver.model.js';
 import { socketManager } from '../db/socketManager.js';
 import axios from 'axios';
-
+import { redisClient } from "../app.js";
 
 export const requestBooking = async (req, res) => {
     try {
         const { userId, pickupLocation, dropoffLocation, vehicleDetails, price } = req.body;
+        // validate all data
+        if (!userId || !pickupLocation || !dropoffLocation || !vehicleDetails || !price){
+            return res.status(400).json({ message: "Please fill all fields" });
+        }
+        
         // Find nearby available drivers based on location and vehicle type
         const drivers = await Driver.find({
             isAvailable: true,
@@ -59,62 +64,6 @@ export const requestBooking = async (req, res) => {
 
 
 // Confirm booking after a driver accepts
-// export const confirmBooking = async (req, res) => {
-//     try {
-
-//         console.log(req.body)
-//         const { driverId, userId, pickupLocation, dropoffLocation, price } = req.body;
-//         const driver = await Driver.findById(driverId);
-//         if (!driver || !driver.isAvailable) {
-//             return res.status(400).json({ error: 'Driver not available' });
-//         }
-
-//         const booking = new Booking({
-//             user: userId,
-//             driver: driverId,
-//             pickupLocation,
-//             dropoffLocation,
-//             status: 'accepted',
-//             price
-//         });
-
-//         await booking.save();
-
-//         const io = socketManager.io();
-//         const room = `booking_${booking._id}`;
-
-//         const userSocket = socketManager.connectedUsers.get(userId);
-//         const driverSocket = socketManager.connectedDrivers.get(driverId);
-
-//         if (userSocket) {
-//             io.to(userSocket).emit('joinBookingRoom', {
-//                 bookingId: booking._id.toString(),
-//                 driverDetails: {
-//                     name: driver.fullName,
-//                     vehicleNumber: driver.vehicleDetails.numberPlate,
-//                     currentLocation: driver.location
-//                 }
-//             });
-//         }
-
-//         if (driverSocket) {
-//             io.to(driverSocket).emit('joinBookingRoom', {
-//                 bookingId: booking._id.toString(),
-//                 userId,
-//                 driverId
-//             });
-//         }
-
-//         socketManager.notifyUser(userId, 'bookingConfirmed', booking);
-//         socketManager.notifyDriver(driverId, 'bookingConfirmed', booking);
-
-//         res.status(200).json({ message: 'Booking confirmed', booking });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Server error' });
-//     }
-// };
-
 export const confirmBooking = async (req, res) => {
     try {
         const { driverId, userId, bookingId } = req.body;
@@ -217,6 +166,8 @@ export const updateDriverLocation = async (req, res) => {
         // Notify the user via socket
         socketManager.notifyUser(booking.user.toString(), 'driverLocationUpdate', booking.realTimeTracking.driverLocation);
 
+        // await redisClient.set(`driverLocation_${bookingId}`, JSON.stringify(booking.realTimeTracking.driverLocation), 'EX', 60 * 5); // Cache for 5 minutes
+        
         res.status(200).json({ message: 'Driver location updated' });
     } catch (error) {
         console.error(error);
@@ -251,6 +202,7 @@ export const updateBookingStatus = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
 const calculateBookingCost = async (pickupLocation, dropoffLocation, vehicleType) => {
     const apiKey = process.env.DISTANCE_MATRIX_API_KEY;
 
@@ -350,7 +302,9 @@ export const PriceCal = async (req, res) => {
 
     try {
         const result = await calculateBookingCost(pickupLocation, dropoffLocation, vehicleDetails.vehicleType);
-
+        // Cache the calculated price in Redis
+        const cacheKey = `price_${pickupLocation.coordinates[0]}_${pickupLocation.coordinates[1]}_${dropoffLocation.coordinates[0]}_${dropoffLocation.coordinates[1]}_${vehicleDetails.vehicleType}`;
+        await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 60 * 60);
         return res.status(200).json(result);
     } catch (error) {
         console.error("Error calculating booking cost:", error.message);

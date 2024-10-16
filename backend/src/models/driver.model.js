@@ -56,7 +56,7 @@ const driverSchema = new Schema(
       },
       vehicleType: {
         type: String,
-        enum: ["small", "medium", "large"],
+        enum: ["scooter", "car", "truck"],
         required: true,
       },
     },
@@ -66,11 +66,9 @@ const driverSchema = new Schema(
       type: {
         type: String,
         enum: ['Point'], // 'location.type' must be 'Point'
-        required: true,
       },
       coordinates: {
         type: [Number], // Array of numbers [longitude, latitude]
-        required: true,
       },
     },
   },

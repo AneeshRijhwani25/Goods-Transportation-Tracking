@@ -1,10 +1,7 @@
-// driverController.js
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { Driver } from "../models/driver.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-import fs from "fs";
 import jwt from "jsonwebtoken";
 import * as socketManager from '../db/socketManager.js';
 // Generate Access and Refresh Tokens for Driver
@@ -32,8 +29,8 @@ const registerDriver = asyncHandler(async (req, res) => {
     fullName,
     email,
     password,
-    phoneNumber,
-    vehicleDetails: { numberPlate, licenceNumber, vehicleType, capacity },
+    number,
+    vehicleDetails: { numberPlate, licenceNumber, vehicleType},
   } = req.body;
 
   // Validation
@@ -42,11 +39,10 @@ const registerDriver = asyncHandler(async (req, res) => {
       fullName,
       email,
       password,
-      phoneNumber,
+      number,
       numberPlate,
       licenceNumber,
       vehicleType,
-      capacity,
     ].includes(undefined)
   ) {
     throw new ApiError(400, "All fields are required");
@@ -56,7 +52,7 @@ const registerDriver = asyncHandler(async (req, res) => {
   const existedDriver = await Driver.findOne({
     $or: [
       { email },
-      { phoneNumber },
+      { phoneNumber:number },
       { "vehicleDetails.numberPlate": numberPlate },
       { "vehicleDetails.licenceNumber": licenceNumber },
     ],
@@ -73,13 +69,12 @@ const registerDriver = asyncHandler(async (req, res) => {
   const driver = await Driver.create({
     fullName,
     email,
-    phoneNumber,
+    phoneNumber: number,
     password,
     vehicleDetails: {
       numberPlate,
       licenceNumber,
       vehicleType,
-      capacity,
     },
   });
 
