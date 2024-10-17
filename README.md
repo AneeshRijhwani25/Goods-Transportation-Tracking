@@ -3,6 +3,13 @@
 ## Introduction
 This project is a scalable logistics platform designed for goods transportation. It enables customers to book transportation services, drivers to accept delivery requests, and admins to monitor operations and performance analytics. The platform supports up to 50 million users, 100,000 drivers, and handles up to 10,000 requests per second globally.
 
+
+## Project Setup
+Visit the [Setup Guide](https://docs.google.com/document/d/1VemptyAZszzoCy8jWU_rwn2UKJeKsytk15muDa7lp3g/edit?usp=sharing) to set the env variables in your machine easily.
+
+## PostMan API Documentation
+Check out the [Postman routes](https://www.postman.com/atlan-take-home-challenge/workspace/atlan-take-home-challenge-workspace/collection/26558077-3a060eb7-1ce8-4138-bf37-4d6bcf6588a6?action=share&creator=26558077) for detatiled API specifications and testing procedures.
+
 ## High-Level Design (HLD)
 ![image](https://github.com/user-attachments/assets/cbf6b124-1934-4890-a9bd-59a7eb57b3ce)
 
