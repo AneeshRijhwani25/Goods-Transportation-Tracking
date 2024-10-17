@@ -10,11 +10,11 @@ import {
   CardDescription,
   CardContent,
 } from "../ui/card";
-
+import Map from "../Map/Map";
 const SOCKET_SERVER_URL = "http://localhost:8000"; // Adjust this according to your server URL
 const API_BASE_URL = "http://localhost:8000/api"; // Adjust this according to your API base URL
 
-const UserBooking = () => {
+const UserBooking = ({data}) => {
   const [driverLocation, setDriverLocation] = useState(null);
   const [socket, setSocket] = useState(null);
   const [error, setError] = useState(null);
@@ -34,7 +34,8 @@ const UserBooking = () => {
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
-
+  
+  const userId = data.user._id;
   const navigate = useNavigate(); // Initialize useNavigate
 
   const handleLogout = () => {
@@ -62,7 +63,6 @@ const UserBooking = () => {
     setPrice(null);
   };
 
-  const userId = "670a6939ce35be59f22acf23"; // Example userId
 
   // Function to request price for the booking
   const requestPrice = async () => {
@@ -384,8 +384,8 @@ const UserBooking = () => {
                           <option value="" disabled>
                             Select vehicle type
                           </option>
-                          <option value="medium">Car</option>
-                          <option value="van">Van</option>
+                          <option value="scooter">Scooter</option>
+                          <option value="car">Car</option>
                           <option value="truck">Truck</option>
                         </select>
                       </div>
@@ -429,13 +429,18 @@ const UserBooking = () => {
                   <CardTitle>Package Status: {packageStatus}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 font-bold">
+                  {/* <p className="text-gray-700 font-bold">
                     Current Driver Location:
                   </p>
                   <p>
                     Latitude: {driverLocation[0]}, Longitude:{" "}
                     {driverLocation[1]}
-                  </p>
+                  </p> */}
+                  <Map
+                    driverLocation={driverLocation}
+                    pickupLocation={pickupCoordinates}
+                    dropoffLocation={dropoffCoordinates}
+                  />
                 </CardContent>
               </Card>
             )}

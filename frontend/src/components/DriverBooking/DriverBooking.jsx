@@ -14,14 +14,14 @@ import { FiHome, FiSettings, FiBarChart2, FiUsers } from "react-icons/fi";
 const SOCKET_SERVER_URL = "http://localhost:8000";
 const API_BASE_URL = "http://localhost:8000/api"; // Adjust the API base URL as needed
 
-const DriverBooking = () => {
+const DriverBooking = ({data}) => {
   const [socket, setSocket] = useState(null);
   const [driverLocation, setDriverLocation] = useState({
   longitude: null,
   latitude: null,
   });
   const [error, setError] = useState(null);
-  const [driverId] = useState("670a78d461b0678303f0931c"); // Mocked driver ID
+  const driverId = data.driver._id;
   const [isAvailable, setIsAvailable] = useState(false);
   const [rideRequest, setRideRequest] = useState(null);
   const [pickupLocation, setPickupLocation] = useState(null);
@@ -34,21 +34,36 @@ const DriverBooking = () => {
 
   // Toggle driver availability and notify the backend
   const toggleAvailability = async () => {
-  try {
-    const response = await axios.post(
-    `${API_BASE_URL}/v1/drivers/available`,
-    {
-      driverId,
-      available: !isAvailable, // Toggle availability
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { longitude, latitude } = position.coords;
+          const driverLocation = { longitude, latitude };
+  
+          try {
+            const response = await axios.post(
+              `${API_BASE_URL}/v1/drivers/available`,
+              {
+                driverId,
+                available: !isAvailable, // Toggle availability
+                location: driverLocation, // Add location to the request
+              }
+            );
+            setIsAvailable(!isAvailable);
+            console.log(response.data.message);
+          } catch (error) {
+            setError("Error toggling availability: " + error.message);
+          }
+        },
+        (error) => {
+          setError("Error fetching location: " + error.message);
+        }
+      );
+    } else {
+      setError("Geolocation is not supported by this browser.");
     }
-    );
-    setIsAvailable(!isAvailable);
-    console.log(response.data.message);
-  } catch (error) {
-    setError("Error toggling availability: " + error.message);
-  }
   };
-
+  
   // Confirm booking and notify backend and the socket
   const confirmBooking = async (rideRequest) => {
   try {

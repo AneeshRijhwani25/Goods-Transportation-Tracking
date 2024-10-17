@@ -6,12 +6,12 @@ import { useNavigate, Link } from "react-router-dom";
 
 axios.defaults.withCredentials = true;
 
-export function Login({ setData }) {
+export function Login( {setData} ) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState(""); // Added state for role
   const navigate = useNavigate(); // Use navigate for redirection
-
+  
   const handleSignIn = (e) => {
     e.preventDefault();
 
@@ -50,9 +50,10 @@ export function Login({ setData }) {
       .post(apiUrl, formData)
       .then((response) => {
         console.log(response.data);
-        const data = response.data;
-        const userData = data ? data.data.user : null;
-
+        const data = response.data.data;
+        const userData = data ? data.user : null;
+        setData(data)
+        localStorage.setItem('userData', JSON.stringify(data));
         // Check if the user is admin if role is "Admin"
         if (role === "Admin" && !userData.isAdmin) {
           toast.error("You are not an admin.");
@@ -66,7 +67,7 @@ export function Login({ setData }) {
         }
 
         // Set user data
-        setData(userData);
+        // setData(userData);
         toast.success("Login successful");
 
         // Clear fields after successful login

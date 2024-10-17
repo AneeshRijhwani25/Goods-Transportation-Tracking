@@ -19,9 +19,12 @@ import DriverBooking from "./components/DriverBooking/DriverBooking";
 import AdminDashboard from "./components/AdminDashboard/AdminDashboard";
 
 function App() {
-  const [data, setData] = useState("");
+  const [data, setData] = useState(() => {
+    const savedData = localStorage.getItem('userData');
+    return savedData ? JSON.parse(savedData) : {};
+  });
   const [loading, setLoading] = useState(false);
-
+  
   useEffect(() => {
     setupAxiosInterceptors();
   }, []);
@@ -70,8 +73,8 @@ function App() {
         <Route path="/login" element={<Login setData={setData} />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<Error />} />
-        <Route path="/userDashboard" element={<UserBooking />} />
-        <Route path="/driverDashboard" element={<DriverBooking />} />
+        <Route path="/userDashboard" element={<UserBooking data = {data} />} />
+        <Route path="/driverDashboard" element={<DriverBooking data = {data} />} />
         <Route path="/adminDashboard" element={<AdminDashboard />}/>
       </Route>
     )

@@ -234,8 +234,12 @@ const Availabe = asyncHandler(async (req, res) => {
 
   // Toggle the availability
   driver.isAvailable = true;
+  driver.location = {
+    type: "Point",
+    coordinates: [req.body.location.longitude, req.body.location.latitude],
+  }
   await driver.save();
-
+  console.log(driver)
   socketManager.updateDriverAvailability(driver._id, driver.isAvailable);
 
 
